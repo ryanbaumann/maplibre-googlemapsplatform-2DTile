@@ -2,6 +2,10 @@
 
 This is a simple web application demonstrating how to use Google Maps Platform's 2D Map Tiles API with the [MapLibre GL JS](https://maplibre.org/maplibre-gl-js/docs/) library. It allows you to configure basic tile settings (style, localization) and generates a corresponding MapLibre GL JS style JSON that you can copy and use in your own applications.
 
+![image](https://github.com/user-attachments/assets/f139f15e-a9a8-43af-ad31-7324ca9d498b)
+
+![image](https://github.com/user-attachments/assets/5a1fc85d-82c7-4ac0-86ba-47bc2fd03cf1)
+
 ## Features
 
 *   Displays GMP Roadmap, Satellite (No Labels), Light Mode, and Dark Mode tiles.
@@ -11,6 +15,10 @@ This is a simple web application demonstrating how to use Google Maps Platform's
 *   Dynamically updates map attribution based on the viewport, adhering to GMP policies.
 *   Uses session tokens for API requests.
 *   Basic UI styled with [Tailwind CSS](https://tailwindcss.com/).
+
+![image](https://github.com/user-attachments/assets/67fc5589-41a7-43ff-8829-720e9ef39191)
+
+![image](https://github.com/user-attachments/assets/29ff260d-d099-49a3-9055-6d119adaa4ad)
 
 ## Setup
 
