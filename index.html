@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>MapLibre GL JS - GMP Tile Viewer</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <!-- Include MapLibre GL JS CSS -->
+    <link href='https://unpkg.com/maplibre-gl@4.1.0/dist/maplibre-gl.css' rel='stylesheet' />
+    <!-- Include Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Minimal styles needed that Tailwind might not cover directly for MapLibre */
+        #map {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 100%;
+            display: none; /* Initially hidden */
+        }
+        #map.visible {
+            display: block; /* Show when active */
+        }
+        /* Ensure MapLibre controls are visible */
+        .maplibregl-ctrl-group button {
+            background-color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .maplibregl-ctrl-group button:hover {
+            background-color: #f0f0f0;
+        }
+        /* Style for the logo */
+         #gmp-logo {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            max-height: 20px; /* Limit max height */
+            width: auto; /* Maintain aspect ratio */
+            z-index: 1000;
+            /* No background/padding needed per GMP guidelines */
+        }
+        /* Hide setup UI when map is active */
+        #setup-ui.hidden {
+             display: none;
+        }
+         /* Hide map sidebar initially */
+        #map-sidebar {
+            display: none;
+        }
+         #map-sidebar.visible {
+             display: block;
+         }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+<div id="app-container" class="flex justify-center items-start min-h-screen pt-12">
+    <!-- Setup UI Card -->
+    <div id="setup-ui" class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <h2 class="text-2xl font-semibold text-center text-gray-800 mb-2">GMP Tiles + MapLibre GL JS</h2>
+        <p class="text-sm text-center text-gray-600 mb-6">Configure Google Maps Platform 2D Tiles and generate a MapLibre style.</p>
+
+        <div class="mb-4">
+            <label for="apiKey" class="block text-sm font-medium text-gray-700 mb-1">Your GMP API Key:</label>
+            <input type="text" id="apiKey" placeholder="Enter GMP API Key with Tile API enabled" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+            <a href="https://console.cloud.google.com/google/maps-apis/overview" target="_blank" rel="noopener noreferrer" class="text-xs text-indigo-600 hover:text-indigo-800 mt-1 inline-block">Get API Key / Enable Tile API</a>
+        </div>
+
+        <div class="mb-4">
+            <label for="mapStyleSelect" class="block text-sm font-medium text-gray-700 mb-1">Map Style:</label>
+            <select id="mapStyleSelect" class="w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="roadmap">Roadmap</option>
+                <!-- <option value="satellite_labels">Satellite (Labels)</option> Removed -->
+                <option value="satellite_nolabels">Satellite (No Labels)</option>
+                <option value="light">Light Mode</option>
+                <option value="dark">Dark Mode</option>
+            </select>
+        </div>
+
+        <div class="mb-6">
+            <label for="localizationSelect" class="block text-sm font-medium text-gray-700 mb-1">Localization:</label>
+            <select id="localizationSelect" class="w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="us">USA (English)</option>
+                <option value="cn">China (Chinese)</option>
+                <option value="es">Spain (Spanish)</option>
+                <option value="fr">France (French)</option>
+                <option value="de">Germany (German)</option>
+                <option value="jp">Japan (Japanese)</option>
+                <!-- Add more options based on IETF language tags and CLDR region codes -->
+            </select>
+        </div>
+
+        <button id="showMapButton" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+            Show Map
+        </button>
+        <div id="setupStatus" class="mt-4 text-sm text-center min-h-[1.2em]"></div> <!-- Status/Error Display -->
+        <style> #setupStatus.error { color: red; } </style> <!-- Keep error color style -->
+    </div>
+
+    <!-- Map container - Visibility controlled by JS -->
+    <div id="map"></div>
+
+    <!-- Map Sidebar - Visibility controlled by JS -->
+    <div id="map-sidebar" class="absolute top-4 left-4 bg-white bg-opacity-90 p-4 rounded-md shadow-lg z-[1001] max-w-xs">
+         <h3 class="text-lg font-semibold text-gray-800 mb-2">Map Configuration</h3>
+         <p class="text-sm text-gray-600 mb-1">Selected Style: <strong id="currentStyle" class="font-medium text-gray-900"></strong></p>
+         <p class="text-sm text-gray-600 mb-2">Selected Locale: <strong id="currentLocale" class="font-medium text-gray-900"></strong></p>
+
+         <div class="mt-4">
+             <label class="block text-sm font-medium text-gray-700 mb-1">MapLibre Style for Your App:</label>
+             <pre class="bg-gray-100 p-2 rounded-md overflow-x-auto text-xs border border-gray-200 max-h-40"><code id="mapStyleJsonDisplay"></code></pre>
+             <button id="copyStyleButton" class="w-full mt-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium py-1 px-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-400">
+                 Copy Style JSON
+             </button>
+         </div>
+
+         <button id="changeSettingsButton" class="w-full mt-4 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium py-2 px-3 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400">
+             Change Settings
+         </button>
+     </div>
+</div>
+
+<!-- Include MapLibre GL JS -->
+<script src='https://unpkg.com/maplibre-gl@4.1.0/dist/maplibre-gl.js'></script>
+<!-- Link to the application script -->
+<script src="script.js"></script>
+
+</body>
+</html>
